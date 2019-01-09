@@ -1,0 +1,23 @@
+{
+  "name": "xfind",
+  "version": "0.0.0",
+  "description": "Simple and fast glob alternative in Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "lsong",
+  "license": "MIT",
+  "directories": {
+    "example": "example"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/song940/xfind.git"
+  },
+  "bugs": {
+    "url": "https://github.com/song940/xfind/issues"
+  },
+  "homepage": "https://github.com/song940/xfind#readme"
+}
