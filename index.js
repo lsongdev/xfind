@@ -11,22 +11,27 @@ const list = async dir => {
 };
 
 const getDir = str => {
-  while(/[\?\*\(\[\{]+/.test(str)){
+  while (/[\?\*\(\[\{]+/.test(str))
     str = path.dirname(str);
-  }
   return str;
 };
 
-const walk = async dir => {
-  const files = await list(dir);
-  for(const filename of files){
-    const st = await stat(filename);
-    if(st.isDirectory()){
-      const next = await walk(filename);
-      files.push.apply(files, next);
+const noop = () => { };
+
+const walk = async (dir, filter) => {
+  var cur;
+  const dirs = [dir], result = [];
+  while (cur = dirs.pop()) {
+    const files = await list(cur);
+    const stats = await Promise.all(files.map(file => stat(file).catch(noop)));
+    const temps = stats.filter(Boolean).map((st, i) => (st.filename = files[i], st));
+    for (const file of temps) {
+      file.isDirectory() ? dirs.push(file.filename) : (
+        filter(file) && result.push(file.filename)
+      );
     }
   }
-  return files;
+  return result;
 };
 
 const compile = str => {
@@ -35,31 +40,35 @@ const compile = str => {
   var dir = getDir(str);
   var glob = str.substr(dir.length);
   ~glob.indexOf('/') && (glob = glob.substr(1));
-  for(const c of glob.split('')){
-    switch(c){
+  for (const c of glob.split('')) {
+    switch (c) {
       case '*':
         exp += '.*';
         break;
       case '.':
         exp += '\\.';
         break;
+      case '!':
+        exp += '?!.*?';
+        break;
       default:
         exp += c;
         break;
     }
   }
-  return { 
-    dir, 
+  return {
+    dir,
     expr: new RegExp(`^${exp}$`, flags)
   };
 };
 
-const filter = (files, expr) => {
-  return files.filter(f => expr.test(f));
+const xfind = (pattern, cb = noop) => {
+  const { dir, expr } = compile(pattern);
+  const filter = file => expr.test(file.filename) && (cb(file) !== false);
+  return walk(dir, filter);
 };
 
-module.exports = async (pattern, options) => {
-  const { dir, expr } = compile(pattern);
-  const files = await walk(dir, options);
-  return filter(files, expr);
-};
+xfind.walk = walk;
+xfind.compile = compile;
+
+module.exports = xfind;
