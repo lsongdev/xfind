@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 const { promisify } = require('util');
 
 const stat = promisify(fs.stat);
@@ -63,6 +64,7 @@ const compile = str => {
 };
 
 const xfind = (pattern, cb = noop) => {
+  assert.ok(pattern);
   const { dir, expr } = compile(pattern);
   const filter = file => expr.test(file.filename) && (cb(file) !== false);
   return walk(dir, filter);
