@@ -14,11 +14,11 @@ $ npm install xfind
 ### Example
 
 ```js
-const glob = require('xfind');
+const xfind = require('xfind');
 
 ;(async () => {
   // touch /tmp/{a,b,c}.js /tmp/{d,e,f}.txt /tmp/g.json
-  const files = await glob('/tmp/(!node_modules/)*.js(on)?');
+  const files = await xfind.collect('/tmp/(!node_modules/)*.js(on)?');
   console.log(files);
   /* outputs: [
   '/tmp/a.js',

@@ -1,40 +1,35 @@
-const fs = require('fs');
-const path = require('path');
-const assert = require('assert');
-const { promisify } = require('util');
 
-const stat = promisify(fs.stat);
-const readdir = promisify(fs.readdir);
+const fs = require('fs').promises;
+const { join, dirname } = require('path');
 
-const list = async dir => {
-  const files = await readdir(dir);
-  return files.map(f => path.join(dir, f));
-};
+/**
+ * walk
+ * @param {*} dir 
+ */
+async function* walk(dir) {
+  for await (const d of await fs.opendir(dir)) {
+    const entry = join(dir, d.name)
+    if (d.isDirectory()) yield* walk(entry)
+    else if (d.isFile()) yield entry
+  }
+}
 
+/**
+* path without *?(){}
+* "/path/to/dir/*.js" => "/path/to/dir"
+* "/tmp/(!node_modules/)*.js(on)?" => "/tmp"
+*/
 const getDir = str => {
   while (/[\?\*\(\[\{]+/.test(str))
-    str = path.dirname(str);
+    str = dirname(str);
   return str;
 };
 
-const noop = () => { };
-
-const walk = async (dir, filter) => {
-  var cur;
-  const dirs = [dir], result = [];
-  while (cur = dirs.pop()) {
-    const files = await list(cur);
-    const stats = await Promise.all(files.map(file => stat(file).catch(noop)));
-    const temps = stats.filter(Boolean).map((st, i) => (st.filename = files[i], st));
-    for (const file of temps) {
-      file.isDirectory() ? dirs.push(file.filename) : (
-        filter(file) && result.push(file.filename)
-      );
-    }
-  }
-  return result;
-};
-
+/**
+ * compile
+ * @param {*} str 
+ * @returns 
+ */
 const compile = str => {
   var exp = '';
   var flags = [];
@@ -63,14 +58,31 @@ const compile = str => {
   };
 };
 
-const xfind = (pattern, cb = noop) => {
-  assert.ok(pattern);
+/**
+ * xfind
+ * @param {*} pattern 
+ * @param {*} cb 
+ */
+const xfind = async (pattern, cb = noop) => {
   const { dir, expr } = compile(pattern);
-  const filter = file => expr.test(file.filename) && (cb(file) !== false);
-  return walk(dir, filter);
+  for await (const file of walk(dir)) {
+    expr.test(file) && cb(file);
+  }
+};
+
+/**
+ * collect
+ * @param {*} pattern 
+ * @returns 
+ */
+const collect = async pattern => {
+  const files = [];
+  await xfind(pattern, file => files.push(file));
+  return files;
 };
 
 xfind.walk = walk;
 xfind.compile = compile;
+xfind.collect = collect;
 
 module.exports = xfind;

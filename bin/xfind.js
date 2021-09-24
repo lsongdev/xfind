@@ -4,6 +4,6 @@ const xfind = require('..');
 
 const [ pattern ] = process.argv.slice(2);
 
-xfind(pattern, file => {
-  console.log(file.filename);
+xfind(pattern, filename => {
+  console.log(filename);
 });

@@ -1,6 +1,6 @@
 {
   "name": "xfind",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Simple and fast glob alternative in Node.js",
   "main": "index.js",
   "bin": "./bin/xfind.js",
